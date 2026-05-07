@@ -21,6 +21,8 @@ from pprint import pformat
 
 import hydra
 import rerun as rr
+import cv2
+from IPython.display import Video, display
 import rerun.blueprint as rrb
 import torch
 from deepdiff import DeepDiff
@@ -46,6 +48,21 @@ from lerobot.common.utils.utils import (
     set_global_seed,
 )
 from lerobot.scripts.eval import eval_policy
+
+def log_video_to_rerun(video_path: str, episode_index: int, step: int):
+    """Read an mp4 and stream its frames into the Rerun viewer."""
+    cap = cv2.VideoCapture(video_path)
+    frame_idx = 0
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        # cv2 reads BGR, rerun expects RGB
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        rr.set_time_seconds("step", step + frame_idx * 1e-6)
+        rr.log(f"simulated_episode/{episode_index}", rr.Image(frame_rgb))
+        frame_idx += 1
+    cap.release()
 
 
 def make_optimizer_and_scheduler(cfg, policy):
@@ -370,6 +387,14 @@ def train(cfg: DictConfig, out_dir: str | None = None, job_name: str | None = No
             log_eval_info(logger, eval_info["aggregated"], step, cfg, offline_dataset, is_offline=True)
             if cfg.wandb.enable:
                 logger.log_video(eval_info["video_paths"][0], step, mode="eval")
+
+            # ── Rerun: stream each rendered episode into its panel ──────────
+            for i, video_path in enumerate(eval_info["video_paths"]):
+                log_video_to_rerun(str(video_path), episode_index=i, step=step)
+
+            # ── Notebook: display the first episode as an inline video ──────
+            display(Video(eval_info["video_paths"][0], embed=True))
+
             logging.info("Resume training")
 
         if cfg.training.save_checkpoint and (
