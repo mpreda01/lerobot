@@ -209,11 +209,11 @@ def log_train_info(logger: Logger, info, step, cfg, dataset, is_offline):
     info["is_offline"] = is_offline
 
     rr.set_time_seconds("step", step)
-    rr.log("train_info/loss", rr.Scalar(loss))
-    rr.log("train_info/grad_norm", rr.Scalar(grad_norm))
-    rr.log("train_info/lr", rr.Scalar(lr))
-    rr.log("train_info/update_time_secs", rr.Scalar(update_s))
-    rr.log("train_info/dataloading_time_secs", rr.Scalar(dataloading_s))
+    rr.log("train_info/loss", rr.Scalars(loss))
+    rr.log("train_info/grad_norm", rr.Scalars(grad_norm))
+    rr.log("train_info/lr", rr.Scalars(lr))
+    rr.log("train_info/update_time_secs", rr.Scalars(update_s))
+    rr.log("train_info/dataloading_time_secs", rr.Scalars(dataloading_s))
     
     logger.log_dict(info, step, mode="train")
 
@@ -263,7 +263,7 @@ def train(cfg: DictConfig, out_dir: str | None = None, job_name: str | None = No
     # Says if the evaluation marker is up or down right now. Switch to indicate a evaluation step.
     eval_marker_up = True
     rr.set_time_seconds("step", 0)
-    rr.log("eval_marker", rr.Scalar(1000))
+    rr.log("eval_marker", rr.Scalars(1000))
 
     # If we are resuming a run, we need to check that a checkpoint exists in the log directory, and we need
     # to check for any differences between the provided config and the checkpoint's config.
@@ -462,14 +462,14 @@ def train(cfg: DictConfig, out_dir: str | None = None, job_name: str | None = No
         if cfg.training.eval_freq > 0 and step % cfg.training.eval_freq == 0:
             if eval_marker_up:
                 rr.set_time_seconds("step", step-cfg.training.eval_freq/20)
-                rr.log("eval_marker", rr.Scalar(1000))
+                rr.log("eval_marker", rr.Scalars(1000))
                 rr.set_time_seconds("step", step)
-                rr.log("eval_marker", rr.Scalar(-1000))
+                rr.log("eval_marker", rr.Scalars(-1000))
             else:
                 rr.set_time_seconds("step", step-cfg.training.eval_freq/20)
-                rr.log("eval_marker", rr.Scalar(-1000))
+                rr.log("eval_marker", rr.Scalars(-1000))
                 rr.set_time_seconds("step", step)
-                rr.log("eval_marker", rr.Scalar(1000))
+                rr.log("eval_marker", rr.Scalars(1000))
 
             eval_marker_up = not eval_marker_up            
 
