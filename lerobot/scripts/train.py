@@ -440,6 +440,8 @@ def train(cfg: DictConfig, out_dir: str | None = None, job_name: str | None = No
         if step == 0:
             logging.info("Start offline training on a fixed dataset")
 
+        step_start_time = time.perf_counter()
+
         start_time = time.perf_counter()
         batch = next(dl_iter)
         dataloading_s = time.perf_counter() - start_time
@@ -481,6 +483,10 @@ def train(cfg: DictConfig, out_dir: str | None = None, job_name: str | None = No
         # Note: evaluate_and_checkpoint_if_needed happens **after** the `step`th training update has completed,
         # so we pass in step + 1.
         evaluate_and_checkpoint_if_needed(step + 1)
+
+        step_time_s = time.perf_counter() - step_start_time
+        print(f"[step {step}] time: {step_time_s:.3f}s")
+
         step += 1
 
     if eval_env:
